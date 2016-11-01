@@ -10,6 +10,7 @@ Iana     62   detconfig  Default  nametranslation  Default  fedconfig  Default  
 Vdig     63   detconfig  Default  nametranslation  Default  fedconfig  Default  fecconfig  Default  fedcard  Default  dac  Default  maxvsf  Default  mask  Default  trim  Default  calib  Vdig  tbm  Default  portcard  Default  portcardmap  Default  ttcciconfig  Default  ltcconfig  Default  tkfecconfig  Default  lowvoltagemap  Default  ;
 TBMDelayForReadback     64   detconfig  Default  nametranslation  Default  fedconfig  Default  fecconfig  Default  fedcard  Default  dac  Default  maxvsf  Default  mask  Default  trim  Default  calib  TBMDelayForReadback  tbm  Default  portcard  Default  portcardmap  Default  ttcciconfig  Default  ltcconfig  Default  tkfecconfig  Default  lowvoltagemap  Default  ;
 ROCDelayForReadback     65   detconfig  Default  nametranslation  Default  fedconfig  Default  fecconfig  Default  fedcard  Default  dac  Default  maxvsf  Default  mask  Default  trim  Default  calib  ROCDelayForReadback  tbm  Default  portcard  Default  portcardmap  Default  ttcciconfig  Default  ltcconfig  Default  tkfecconfig  Default  lowvoltagemap  Default  ;
+POHBias     66   detconfig  Default  nametranslation  Default  fedconfig  Default  fecconfig  Default  fedcard  Default  dac  Default  maxvsf  Default  mask  Default  trim  Default  calib  ROCDelayForReadback  tbm  Default  portcard  Default  portcardmap  Default  ttcciconfig  Default  ltcconfig  Default  tkfecconfig  Default  lowvoltagemap  Default  ;
 VersionAliases
 calib  3 TBMDelay ;
 calib  22 ROCDelay ;
@@ -22,6 +23,7 @@ calib  21 Iana ;
 calib  24 Vdig ;
 calib  23 TBMDelayForReadback ;
 calib  25 ROCDelayForReadback ;
+calib  26 POHBias ;
 detconfig  0 Default ;
 nametranslation  0 Default ;
 tkfecconfig  0 Default ;

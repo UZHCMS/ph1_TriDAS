@@ -43,7 +43,7 @@
 #include "PixelCalibrations/include/PixelTBMDelayCalibration.h"
 #include "PixelCalibrations/include/PixelROCDelayCalibration.h"
 #include "PixelCalibrations/include/PixelReadbackCalibration.h"
-//#include "PixelCalibrations/include/PixelPOHBiasCalibration.h"
+#include "PixelCalibrations/include/PixelPOHBiasCalibration.h"
 //#include "PixelCalibrations/include/PixelPOHGainCalibration.h"
 
 //PixelFEDSupervisor calibrations
@@ -73,7 +73,7 @@
 #include "PixelCalibrations/include/PixelFEDTBMDelayCalibration.h"
 #include "PixelCalibrations/include/PixelFEDROCDelayCalibration.h"
 #include "PixelCalibrations/include/PixelFEDReadbackCalibration.h"
-//#include "PixelCalibrations/include/PixelFEDPOHBiasCalibration.h"
+#include "PixelCalibrations/include/PixelFEDPOHBiasCalibration.h"
 //#include "PixelCalibrations/include/PixelFEDPOHGainCalibration.h"
 
 //PixelTKFECSupervisor calibrations
@@ -122,9 +122,9 @@ PixelCalibrationBase* PixelCalibrationFactory::getCalibration(const std::string&
     return new PixelAOHBiasCalibration(*pixSupConfPtr, soapCmdrPtr);
   }  
 
-  //if (calibName=="POHBias") {
-  //  return new PixelPOHBiasCalibration(*pixSupConfPtr, soapCmdrPtr);
-  //}  
+  if (calibName=="POHBias") {
+    return new PixelPOHBiasCalibration(*pixSupConfPtr, soapCmdrPtr);
+  }  
 
   if (calibName=="AOHAndFEDChannelMappingTest") {
     return new PixelAOHAndFEDChannelMappingTest(*pixSupConfPtr, soapCmdrPtr);
@@ -304,9 +304,9 @@ PixelFEDCalibrationBase* PixelCalibrationFactory::getFEDCalibration(const std::s
     return new PixelFEDAOHBiasCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
   } 
 
-  //if (calibName=="POHBias") {
-  //  return new PixelFEDPOHBiasCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
-  //} 
+  if (calibName=="POHBias") {
+    return new PixelFEDPOHBiasCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
+  } 
   
   if (calibName=="AOHAndFEDChannelMappingTest") {
     return new PixelFEDAOHAndFEDChannelMappingTest(*pixFEDSupConfPtr, soapCmdrPtr);

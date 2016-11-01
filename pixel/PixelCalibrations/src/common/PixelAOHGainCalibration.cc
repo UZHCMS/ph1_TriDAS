@@ -173,7 +173,7 @@ void PixelAOHGainCalibration::endCalibration()
 			const unsigned int AOHNumber = AOHNumber_itr->first;
 			const unsigned int newAOHGain = AOHNumber_itr->second;
 			const unsigned int oldAOHGain = thisPortCardConfig->getAOHGain(AOHNumber);
-			thisPortCardConfig->setAOHGain(AOHNumber, AOHNumber_itr->second);
+			thisPortCardConfig->setAOHGain(AOHNumber, AOHNumber_itr->second, "dummy");
 			
 			// Tabulate summary values.
 			AOHGains_Moments.push_back(newAOHGain);

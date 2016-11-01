@@ -1,0 +1,19 @@
+Mode: POHBias
+Parameters:
+DumpFIFOs yes
+ReadFifo1 yes
+ScanMin 15
+ScanMax 40
+ScanStepSize 2
+GainMin 2
+GainMax 2
+GainStepSize 1
+nTriggersPerPOHBias 100
+AllowPlateau 0.97
+Rows:
+Cols:
+VcalHigh
+Set: Vcal 200
+Repeat: 1
+Rocs:
+all

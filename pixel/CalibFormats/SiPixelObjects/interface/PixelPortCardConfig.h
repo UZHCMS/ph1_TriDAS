@@ -70,7 +70,7 @@ namespace pos{
     unsigned int AOHBiasAddressFromAOHNumber(unsigned int AOHNumber) const;
     unsigned int AOHGainAddressFromAOHNumber(unsigned int AOHNumber) const;
     
-    void setAOHGain(unsigned int AOHNumber, unsigned int value) {setAOHGain(AOHGainStringFromAOHNumber(AOHNumber),value);}
+    void setAOHGain(unsigned int AOHNumber, unsigned int value, std::string tbmname) {setAOHGain(AOHGainStringFromAOHNumber(AOHNumber),value, tbmname);}
     unsigned int getAOHGain(unsigned int AOHNumber) const;
     
     unsigned int new_PLL_CTR2_value(std::string CTR4or5, unsigned int last_CTR2) const;
@@ -82,7 +82,7 @@ namespace pos{
     bool containsDeviceAddress(unsigned int deviceAddress) const;
     bool containsSetting(std::string settingName) const { return containsDeviceAddress(getdeviceAddressForSetting(settingName)); }
 
-    void setAOHGain(std::string settingName, unsigned int value);
+    void setAOHGain(std::string settingName, unsigned int value, std::string tbmname);
     void setDataBaseAOHGain(std::string settingName, unsigned int value);
     std::string AOHGainStringFromAOHNumber(unsigned int AOHNumber) const;
 
