@@ -37,6 +37,9 @@ class PixelPOHBiasCalibration : public PixelCalibrationBase {
 
 
  private:
+
+  bool writeElog;
+
   void Analyze();
   void CloseRootf();
   //  void CloseRoots();
@@ -47,7 +50,9 @@ class PixelPOHBiasCalibration : public PixelCalibrationBase {
   TTree* tree;
   //  TTree* summarytree;
   
-  //  TH2F* summarymap;
+  std::map<int, TH2F*> summary;
+
+
   //  std::map<int,std::map<int, std::map<int, TH1F*> > > effmap;
   //    std::map<int, std::map<int, TH1F*> > effmap;
 
@@ -77,6 +82,7 @@ class PixelPOHBiasCalibration : public PixelCalibrationBase {
   float AllowPlateau;
   
   TString root_fn;
+  TString outtext;
   //  TString root_fs;
     
 //  TString cname;

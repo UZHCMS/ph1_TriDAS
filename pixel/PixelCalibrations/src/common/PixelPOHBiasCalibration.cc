@@ -5,6 +5,8 @@
 
 #include "PixelUtilities/PixelRootUtilities/include/PixelRootDirectoryMaker.h"
 #include <toolbox/convertstring.h>
+#include <stdlib.h>
+#include <fstream>
 
 using namespace pos;
 using namespace std;
@@ -46,6 +48,9 @@ void PixelPOHBiasCalibration::beginCalibration() {
   AllowPlateau = k_AllowPlateau_default;
   if ( tempCalibObject->parameterValue("AllowPlateau") != "" ) AllowPlateau = atof(tempCalibObject->parameterValue("AllowPlateau").c_str());
 
+  writeElog = tempCalibObject->parameterValue("writeElog") == "yes";
+
+
   std::cout << "[INFO] AOHBiasMin = " << AOHBiasMin << std::endl;
   std::cout << "[INFO] AOHBiasMax = " << AOHBiasMax << std::endl;
   std::cout << "[INFO] AOHBiasStepSize = " << AOHBiasStepSize << std::endl;
@@ -54,11 +59,13 @@ void PixelPOHBiasCalibration::beginCalibration() {
   std::cout << "[INFO] AOHGainStepSize = " << AOHGainStepSize << std::endl;
   std::cout << "[INFO] nTriggersPerPOHBias = " << nTriggersPerPOHBias << std::endl;
   std::cout << "[INFO] AllowPlateau = " << AllowPlateau << std::endl;
+  std::cout << "[INFO] writeElog = " << writeElog << std::endl;
 
   tempCalibObject->writeASCII(outputDir());
   std::cout << "[INFO] OutputDir = " << outputDir() << std::endl;
-    
 
+  outtext.Form("%s/log.txt", outputDir().c_str());
+  
   BookEm();
 }
 
@@ -156,6 +163,22 @@ void PixelPOHBiasCalibration::endCalibration() {
   assert(tempCalibObject != 0);
   assert(event_ == tempCalibObject->nTriggersTotal());
 
+
+  // prepare for e-log
+  std::cout << "Make e-log message" << std::endl;
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+  ofs << "AOHBias Min = " << AOHBiasMin << std::endl;
+  ofs << "AOHBias Max = " << AOHBiasMax << std::endl;
+  ofs << "AOHBias Stepsize = " << AOHBiasStepSize << std::endl;
+  ofs << "AOHGain Min = " << AOHGainMin << std::endl;
+  ofs << "AOHGain Max = " << AOHGainMax << std::endl;
+  ofs << "AOHGain Stepsize = " << AOHGainStepSize << std::endl;
+  ofs << "nTriggersPerPOHBias = " << nTriggersPerPOHBias << std::endl;
+  ofs << "Plateau tolerance = " << AllowPlateau << std::endl;
+  ofs << std::endl;
+
   for(int index=0; index < (int)fednumber_.size(); index++){
 
     int fed = fednumber_[index];
@@ -164,6 +187,8 @@ void PixelPOHBiasCalibration::endCalibration() {
     string portcard = portcard_[index];
 
     Int_t firstPlateau_forPOH = -1;
+    
+    bool isNoPlateau = false;
 	
     for(int channel_index = 0; channel_index < 2; channel_index++){
       for (unsigned int AOHGain=AOHGainMin; AOHGain <= AOHGainMax; ++AOHGain){      
@@ -176,9 +201,6 @@ void PixelPOHBiasCalibration::endCalibration() {
 	histos[fed][ch][AOHGain]->Scale(1./nTriggersPerPOHBias);
 
 	bool reach_plateau = false;
-
-	//	Int_t counter_fail = 0;
-	//	Int_t counter_success = 0;
 	Int_t firstPlateau = -1;
 	Float_t plateau_eff = 0;
 	Float_t nplateau = 0;
@@ -207,13 +229,18 @@ void PixelPOHBiasCalibration::endCalibration() {
 	  plateau_eff /= nplateau;	
 	}
 
-	std::cout << "fed = " << fed << ", channel = " << ch << ", plateau = " << firstPlateau << " eff = " << plateau_eff << std::endl;
-	std::cout << "allow = " << AllowPlateau << std::endl;
+
+	// First plateau
+	summary[fed]->SetBinContent(ch, 1, firstPlateau);
+	summary[fed]->SetBinContent(ch, 2, plateau_eff);
+
+	if(reach_plateau==false) isNoPlateau = true;
+
 
 	if(plateau_eff > AllowPlateau) b_isStable = 1;
 	else b_isStable = 0;
 
-	if(firstPlateau < 20 && firstPlateau >= 0) b_isFastPlateau = 1;
+	if(firstPlateau < 25 && firstPlateau >= 0) b_isFastPlateau = 1;
 	else b_isFastPlateau = 0;
 
 	b_isPass = (b_isStable==1 && b_isFastPlateau==1);
@@ -225,21 +252,26 @@ void PixelPOHBiasCalibration::endCalibration() {
 
 	tree->Fill();
 
+	ofs << "[result] FED = " << fed << ", channel = " << ch << ", first plateau = " << firstPlateau << " (isFastPlateau = " << b_isFastPlateau << "), plateau eff = " << plateau_eff << " (isStable = " << b_isStable << ") ==> isPass = " << b_isPass  << std::endl;
       }
     }
 
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "New settings : FED" << fed << ", AOH" << aoh << " (portcard : " << portcard << ") : bias = " << firstPlateau_forPOH +5 <<  std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
+    //    std::cout << "-----------------------------------------" << std::endl;
+    //    std::cout << "New settings : FED" << fed << ", AOH" << aoh << " (portcard : " << portcard << ") : bias = " << firstPlateau_forPOH +5 <<  std::endl;
+    //    std::cout << "-----------------------------------------" << std::endl;
 
-    if(firstPlateau_forPOH==-1){
+    if(firstPlateau_forPOH==-1 || isNoPlateau==true){
       bias_values_by_portcard_and_aoh_new[portcard][aoh] = 30;
+      ofs << std::endl;
+      ofs << "[warning] portCard = " << portcard << ", AOH number = " << aoh << " could not find optimal value (did not reach plateau) -> set to " << bias_values_by_portcard_and_aoh_new[portcard][aoh] << std::endl;
     }else{
       bias_values_by_portcard_and_aoh_new[portcard][aoh] = firstPlateau_forPOH + 5; // safety factor
     }
 
-
+    ofs << "[result] portCard = " << portcard << ", AOH number = " << aoh << " -> New setting : " << bias_values_by_portcard_and_aoh_new[portcard][aoh] << std::endl;
+    ofs << std::endl;
   }
+
 
 
 	
@@ -258,12 +290,81 @@ void PixelPOHBiasCalibration::endCalibration() {
     for(std::map<unsigned int, unsigned int >::iterator AOHNumber_itr = portCardName_itr->second.begin(); AOHNumber_itr != portCardName_itr->second.end(); AOHNumber_itr++){
       unsigned int AOHNumber = AOHNumber_itr->first;
       unsigned int AOHBiasAddress = thisPortCardConfig->AOHBiasAddressFromAOHNumber(AOHNumber);
-      thisPortCardConfig->setdeviceValues(AOHBiasAddress, bias_values_by_portcard_and_aoh_new[portCardName][AOHNumber]);
-      
+      thisPortCardConfig->setdeviceValues(AOHBiasAddress, bias_values_by_portcard_and_aoh_new[portCardName][AOHNumber]);      
     }
     thisPortCardConfig->writeASCII(outputDir());
     cout << "Wrote the portcard config for port card: " << portCardName << endl;
   }
+
+  // create e-log message
+  ofs.close();
+
+
+  if(writeElog){
+
+    string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+    cmd += runDir();
+    cmd += " : POH Bias Scan\" -m ";
+    cmd += outtext;
+
+    for(std::map<int,std::map<int, std::map<int, TH1F* > > >::iterator it1 = histos.begin(); it1 != histos.end(); ++it1){
+      
+      Int_t fednumber = it1->first;
+      
+      TString cname = "Summary_FED";
+      cname += fednumber;
+      
+      TCanvas *c = new TCanvas(cname, cname);
+      summary[fednumber]->Draw("colz");
+      
+      TString filename; 
+      filename.Form("%s/summary_FED%i.gif", outputDir().c_str(), fednumber);
+      c->Print(filename);
+
+      cmd += " -f ";
+      cmd += filename;
+
+
+      TString tname = "Turnon_FED";
+      tname += fednumber;
+      
+      TCanvas *c2 = new TCanvas(tname, tname);
+
+
+      int idraw = 0;
+      for(std::map<int, std::map<int, TH1F* > >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
+
+	Int_t ch = it2->first;
+
+	histos[fednumber][ch][2]->SetLineColor(idraw+1);
+	
+	histos[fednumber][ch][2]->GetYaxis()->SetRangeUser(0, 1.3);
+
+	if(idraw==0) histos[fednumber][ch][2]->Draw();
+	else histos[fednumber][ch][2]->Draw("same");	
+      
+	idraw++;
+      }
+
+      TString tfilename;
+      tfilename.Form("%s/turnon_FED%i.gif", outputDir().c_str(), fednumber);
+      c2->Print(tfilename);
+
+      cmd += " -f ";
+      cmd += tfilename;
+
+    }
+
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    //    int i = system(cmd.c_str());
+    // std::cout << "returnCode = " << i << std::endl;
+    std::cout << "---------------------------" << std::endl;
+  }
+
+
+  tempCalibObject->writeASCII(outputDir());
 
   CloseRootf();  
 
@@ -375,6 +476,8 @@ void PixelPOHBiasCalibration::BookEm(){
 	TH1F *h_eff = new TH1F(hname, hname, 
 			       nbins, AOHBiasMin, AOHBiasMax+1);
 
+	//	h_eff->SetMinimum(0.);
+	//	h_eff->SetMaximum(1.4);
 	//	h_eff->GetXaxis()->SetTitle("POH bias");
 	//	h_eff->GetYaxis()->SetTitle("efficiency");
 
@@ -383,6 +486,37 @@ void PixelPOHBiasCalibration::BookEm(){
       }
     }
   }
+
+
+
+  for(std::map<int,std::map<int, std::map<int, TH1F* > > >::iterator it1 = histos.begin(); it1 != histos.end(); ++it1){
+
+    int channelcount = 0;    
+    for(std::map<int, std::map<int, TH1F* > >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
+      channelcount ++;
+    }
+
+    Int_t fednumber = it1->first;
+    TString hname = "summary_X_FED";
+    hname += fednumber;
+
+    TH2F* _summary = new TH2F(hname, hname, 
+			      channelcount, 0, channelcount,
+			      2,0,2);
+
+    int xcount = 0;    
+    for(std::map<int, std::map<int, TH1F* > >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
+      xcount++; 
+      TString label = "ch";
+      label += it2->first;
+      _summary->GetXaxis()->SetBinLabel(xcount, label);
+    }
+    _summary->GetYaxis()->SetBinLabel(1, "Plataeu X");
+    _summary->GetYaxis()->SetBinLabel(2, "Plataeu eff.");
+
+    summary[fednumber] = _summary;
+  }
+
 
   rootf->cd();
 }
