@@ -24,7 +24,10 @@
 #include<TH1F.h>
 #include<TH1D.h>
 #include<TH2F.h>
+#include<TLegend.h>
 #include<TCanvas.h>
+#include<TROOT.h>
+#include<TStyle.h>
 
 class PixelPOHBiasCalibration : public PixelCalibrationBase {
  public:

@@ -231,8 +231,27 @@ void PixelPOHBiasCalibration::endCalibration() {
 
 
 	// First plateau
-	summary[fed]->SetBinContent(ch, 1, firstPlateau);
-	summary[fed]->SetBinContent(ch, 2, plateau_eff);
+
+	//	std << "fed = " << fed << " ch = " << ch << " " << firstPlateau << " " << plateau_eff << std::endl;
+
+	TString xlabel = "ch";
+	xlabel += ch;
+
+	Int_t xbin = -1;
+	for(int ibin=1; ibin < summary[fed]->GetXaxis()->GetNbins()+1; ibin++){
+	  if(summary[fed]->GetXaxis()->GetBinLabel(ibin)==xlabel){
+	    xbin = ibin;
+	  }
+	}
+	
+	if(xbin==-1){
+	  std::cout << "WARNING : could not find bins ! " << std::endl;
+	}
+
+
+	summary[fed]->SetBinContent(xbin, 1, firstPlateau);
+	if(reach_plateau) summary[fed]->SetBinContent(xbin, 2, plateau_eff);
+	else summary[fed]->SetBinContent(xbin, 2, -1.);
 
 	if(reach_plateau==false) isNoPlateau = true;
 
@@ -315,7 +334,7 @@ void PixelPOHBiasCalibration::endCalibration() {
       cname += fednumber;
       
       TCanvas *c = new TCanvas(cname, cname);
-      summary[fednumber]->Draw("colz");
+      summary[fednumber]->Draw("colztext");
       
       TString filename; 
       filename.Form("%s/summary_FED%i.gif", outputDir().c_str(), fednumber);
@@ -329,22 +348,29 @@ void PixelPOHBiasCalibration::endCalibration() {
       tname += fednumber;
       
       TCanvas *c2 = new TCanvas(tname, tname);
-
-
+      TLegend *leg = new TLegend(0.6,0.2,0.8,0.5);
+      
       int idraw = 0;
       for(std::map<int, std::map<int, TH1F* > >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
 
 	Int_t ch = it2->first;
 
 	histos[fednumber][ch][2]->SetLineColor(idraw+1);
-	
+	histos[fednumber][ch][2]->SetLineWidth(2);
+	histos[fednumber][ch][2]->SetLineStyle(idraw+1);
 	histos[fednumber][ch][2]->GetYaxis()->SetRangeUser(0, 1.3);
 
 	if(idraw==0) histos[fednumber][ch][2]->Draw();
 	else histos[fednumber][ch][2]->Draw("same");	
-      
+	
+	TString chlabel = "ch = ";
+	chlabel += ch;
+	leg->AddEntry(histos[fednumber][ch][2], chlabel, "l");
+
 	idraw++;
       }
+
+      leg->Draw();
 
       TString tfilename;
       tfilename.Form("%s/turnon_FED%i.gif", outputDir().c_str(), fednumber);
@@ -447,6 +473,8 @@ void PixelPOHBiasCalibration::BookEm(){
       
   }
 
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(0);
   
   rootDirs = new PixelRootDirectoryMaker(vectorOfPortcards, gDirectory);
 
@@ -476,10 +504,13 @@ void PixelPOHBiasCalibration::BookEm(){
 	TH1F *h_eff = new TH1F(hname, hname, 
 			       nbins, AOHBiasMin, AOHBiasMax+1);
 
-	//	h_eff->SetMinimum(0.);
-	//	h_eff->SetMaximum(1.4);
-	//	h_eff->GetXaxis()->SetTitle("POH bias");
-	//	h_eff->GetYaxis()->SetTitle("efficiency");
+	h_eff->GetXaxis()->SetTitle("POH bias");
+	h_eff->GetYaxis()->SetTitle("efficiency");
+
+	TString titlename = "Turn-on_FED";
+	titlename += fednumber_[istr];
+
+	h_eff->SetTitle(titlename);
 
 	histos[fednumber_[istr]][channelstr][AOHGain] = h_eff;
 
