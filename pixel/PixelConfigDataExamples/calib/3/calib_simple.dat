@@ -2,6 +2,7 @@ Mode: TBMDelay
 Parameters:
 DumpFIFOs yes
 ReadFifo1 yes
+writeElog yes
 Rows:
 10
 Cols:

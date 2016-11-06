@@ -17,6 +17,8 @@
 #include "TTree.h"
 #include <iomanip>
 #include <algorithm>
+#include <stdlib.h>
+#include <fstream>
 
 using namespace pos;
 
@@ -48,6 +50,7 @@ xoap::MessageReference PixelFEDTBMDelayCalibration::beginCalibration(xoap::Messa
 
   DumpFIFOs = tempCalibObject->parameterValue("DumpFIFOs") == "yes";
   ReadFifo1 = tempCalibObject->parameterValue("ReadFifo1") == "yes";
+  writeElog = tempCalibObject->parameterValue("writeElog") == "yes";
   //  const std::vector<PixelROCName>& rocs = tempCalibObject->rocList();
   //PixelRootDirectoryMaker rootDirs(rocs, rootf);
 
@@ -66,6 +69,8 @@ xoap::MessageReference PixelFEDTBMDelayCalibration::beginCalibration(xoap::Messa
 
     for( unsigned int i = 0; i < dacvals.size(); ++i ) std::cout << " dac value " << i << " is " << dacvals[i] << std::endl;
   }
+
+  outtext.Form("%s/log.txt", outputDir().c_str());
 
   BookEm("");
 
@@ -214,6 +219,7 @@ void PixelFEDTBMDelayCalibration::RetrieveData(unsigned state) {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void PixelFEDTBMDelayCalibration::Analyze() {
 
+
   int ntriggers = event_-1;
   if (dacsToScan.size() == 0){
 
@@ -225,6 +231,14 @@ void PixelFEDTBMDelayCalibration::Analyze() {
     CloseRootf();
     return;
   }
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(0);
+
+
 
   PixelCalibConfiguration* tempCalibObject = dynamic_cast<PixelCalibConfiguration*>(theCalibObject_);
   assert(tempCalibObject != 0);
@@ -425,7 +439,6 @@ void PixelFEDTBMDelayCalibration::Analyze() {
 
   }
 
-  CloseRootf();
 
   //now print summary and save it on text file
   std::map<std::string,std::vector<int> > FEDchannelsPerModule;
@@ -448,6 +461,92 @@ void PixelFEDTBMDelayCalibration::Analyze() {
    out << "              | " << effForBestTBMPLLdelay[it->first] << "          | " << passState[it->first] << "    | \n";
   }
 
+  if(writeElog){
+
+    string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+    cmd += runDir();
+    cmd += " : TBMDelayCalibration\" -m ";
+    cmd += outtext;
+
+
+    for( std::map<std::string,std::vector<int> >::iterator it = FEDchannelsPerModule.begin(); it != FEDchannelsPerModule.end(); ++it ){
+      ofs << "Module : " << it->first << " ch = ";
+
+      for( unsigned int i = 0; i < (it->second).size(); ++i ){
+	ofs << (it->second)[i] << " ";
+      }
+      
+      ofs << std::endl;
+      ofs << "[result] 400MHz phase = " 
+	  << ((bestTBMPLLSettings[it->first]&28)>>2)
+	  << std::endl;
+      ofs << "[result] 160MHz phase = " 
+	  << ((bestTBMPLLSettings[it->first]&224)>>5)
+	  << std::endl;
+
+      ofs << "[result] Best TBMPLLSettings = " 
+	  << bestTBMPLLSettings[it->first] 
+	  << ", current TBMPLL Settings = " 
+	  << currentTBMPLLdelay[it->first] 
+	  << ", delta = "      
+	  << bestTBMPLLSettings[it->first] - currentTBMPLLdelay[it->first]
+	  << std::endl;
+
+      ofs << "[result] efficiencyForBestTBMPLLDelay = " 
+	  << effForBestTBMPLLdelay[it->first] 
+	  << ", passState = " 
+	  << passState[it->first] 
+	  <<  std::endl;
+    }
+
+
+    for( std::map<std::string,std::vector<TH2F*> >::iterator it = TBMsHistoSum.begin(); it != TBMsHistoSum.end(); ++it ){
+
+      for( unsigned int i = 0; i < it->second.size(); ++i ){ 
+	
+
+	TString cname = "Summary_";
+	cname += it->first;
+
+	if(i==0){
+	  cname += "_nTBMDecodes";
+	}else if(i==1){
+	  cname += "_nROCHeaders";
+	}else{
+	  std::cout << "This is impossible !" << std::endl;
+	}
+
+	TCanvas *c = new TCanvas(cname, cname);
+	it->second[i]->SetTitle(cname);
+	it->second[i]->Draw("colztext");
+
+	TString filename = outputDir().c_str();
+	filename += "/";
+	filename += cname;
+	filename += it->first;
+	filename += "_";
+	filename += i;
+	filename += ".gif";
+	//	filename.Form("%s/summary_%s_%i.gif", outputDir().c_str(), it->first, i);
+	c->Print(filename);
+
+	cmd += " -f ";
+	cmd += filename;
+
+      }
+    }
+
+
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    //    int i = system(cmd.c_str());
+    // std::cout << "returnCode = " << i << std::endl;
+    std::cout << "---------------------------" << std::endl;    
+
+  }
+
+  CloseRootf();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -169,6 +169,36 @@ void PixelPOHBiasCalibration::endCalibration() {
 
   std::ofstream ofs(outtext);
   ofs << std::endl;
+
+  std::list<const PixelModuleName*> modules=theNameTranslation_->getModules();
+  std::list<const PixelModuleName*>::const_iterator module_itr=modules.begin();
+
+  for(;module_itr!=modules.end();++module_itr){
+    std::string modulePath=(*module_itr)->modulename();
+    ofs << "TBM setting : pixel/tbm/" << modulePath << std::endl;
+    ofs << "TBM setting : pixel/dac/" << modulePath << std::endl;
+  }
+
+
+  const std::set<std::string>& portcards=thePortcardMap_->portcards();
+  std::set<std::string>::const_iterator iportcard=portcards.begin();
+
+  for (;iportcard!=portcards.end();iportcard++) {
+    ofs << "PortCard setting : pixel/portcard/" << *iportcard << std::endl;
+  }
+
+
+  std::map <unsigned int, std::set<unsigned int> > fedsAndChannels=theNameTranslation_->getFEDsAndChannels();
+  
+  std::map <unsigned int, std::set<unsigned int> >::iterator i_fedsAndChannels=fedsAndChannels.begin();
+  for (;i_fedsAndChannels!=fedsAndChannels.end();++i_fedsAndChannels) {
+    unsigned long fednumber=i_fedsAndChannels->first;
+    ofs << "FedCard setting : pixel/fedcard/"+SOAPCommander::itoa(fednumber) << std::endl;
+  }
+
+
+
+
   ofs << "AOHBias Min = " << AOHBiasMin << std::endl;
   ofs << "AOHBias Max = " << AOHBiasMax << std::endl;
   ofs << "AOHBias Stepsize = " << AOHBiasStepSize << std::endl;
