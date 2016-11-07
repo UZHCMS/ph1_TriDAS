@@ -54,6 +54,10 @@ class PixelTKFECDelay25Calibration: public PixelTKFECCalibrationBase {
 
  private:
 
+  int writeElog_;
+  TString outtext;
+  std::ofstream ofs;
+
   pos::PixelDelay25Calib* tempDelay25_;
 
   bool done_;

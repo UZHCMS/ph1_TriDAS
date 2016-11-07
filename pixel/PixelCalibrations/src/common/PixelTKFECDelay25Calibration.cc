@@ -27,6 +27,7 @@ PixelTKFECDelay25Calibration::PixelTKFECDelay25Calibration(const PixelTKFECSuper
 xoap::MessageReference PixelTKFECDelay25Calibration::execute(xoap::MessageReference msg){
   event_++;
 
+
   //this is a fix for multi-crate (FPix+BPix) running.
   if (done_) {
     ::sleep(1);
@@ -283,23 +284,29 @@ xoap::MessageReference PixelTKFECDelay25Calibration::execute(xoap::MessageRefere
       tempDelay25_->writeFiles(newSDA, newRDA, numTests_);
       
       tempDelay25_->closeFiles();
-      
+
       cout << "The stable point I have chosen is SDA=0x" << hex << newSDA
 	   << " RDA=0x" << newRDA << dec << endl;
+
+      ofs <<  "The stable point I have chosen is SDA=0x" << hex << newSDA << " RDA=0x" << newRDA << dec << endl;
       //cout << "Final stable region size is " << countRegion << endl;
       if(countRegion < 11) {
 	cout << "Warning!  The good region around this point is small.  Portcard "
+	     << portcardName_ << " might be problematic." << endl;
+	ofs << "[warning] The good region around this point is small. Portcard "
 	     << portcardName_ << " might be problematic." << endl;
       }
       
       //Set SData to the chosen value
       if( !SetDelay(portcardConfig_, "SDATA", newSDA, true, false) ) { 
 	cout<<"There was a problem setting "<<"SDATA"<<endl;
+	ofs<<"[warning] There was a problem setting "<<"SDATA"<<endl;
       }
       
       //Set RData to the chosen value
       if( !SetDelay(portcardConfig_, "RDATA", newRDA, true, true) ) {
 	cout<<"There was a problem setting "<<"RDATA"<<endl;
+	ofs<<"[warning] There was a problem setting "<<"RDATA"<<endl;
       }
 
       //create and draw the root plot
@@ -376,6 +383,7 @@ xoap::MessageReference PixelTKFECDelay25Calibration::execute(xoap::MessageRefere
 
 	  cout << "The stable point I have chosen is SDA=0x" << hex << newSDA
 	       << " RDA=0x" << newRDA << dec << endl;
+
 	  //cout << "Final stable region size is " << countRegion << endl;
 	  if(countRegion < 11) {
 	    cout << "Warning!  The good region around this point is small.  Portcard "
@@ -390,6 +398,7 @@ xoap::MessageReference PixelTKFECDelay25Calibration::execute(xoap::MessageRefere
 	  //Set RData to the chosen value
 	  if( !SetDelay(portcardConfig_, "RDATA", newRDA, true, true) ) {
 	    cout<<"There was a problem setting "<<"RDATA"<<endl;
+	    ofs <<"There was a problem setting "<<"RDATA"<<endl;
 	  }
 
 	  //create and draw the root plot
@@ -454,6 +463,7 @@ xoap::MessageReference PixelTKFECDelay25Calibration::beginCalibration(xoap::Mess
   origRData_ = tempDelay25_->getOrigRDa();
   range_ = tempDelay25_->getRange();
   commands_ = tempDelay25_->getCommands();
+  writeElog_ = tempDelay25_->getwriteElog();
   //totalSData_ = origSData_ + range_;
   countSData_ = 0;
   nextModule_ = true;
@@ -491,7 +501,11 @@ xoap::MessageReference PixelTKFECDelay25Calibration::beginCalibration(xoap::Mess
 
   //construct the root file directory structure
   rootDirs_ = new PixelRootDirectoryMaker(vectorOfPortcards_,gDirectory);
-  
+ 
+
+  outtext.Form("%s/log.txt", outputDir().c_str());
+  ofs.open(outtext);
+  ofs << std::endl;
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibratioDone");
   return reply;
@@ -876,6 +890,31 @@ void PixelTKFECDelay25Calibration::WriteRootFile(int newSDA, int newRDA, bool co
 	mk1->Draw();
      }
      ((TPad*)(c))->Write();
+
+     TString filename = outputDir().c_str();
+     filename += "/summary_";
+     filename += shorttitle;
+     filename += ".gif";
+
+     //     filename.Form("%s/summary_%s.gif", outputDir().c_str(), shorttitle);
+     c->Print(filename);
+     
+     if(writeElog_){
+       
+       string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+       cmd += runDir();
+       cmd += " : Delay25 Scan\" -m ";
+       cmd += outtext;
+       cmd += " -f ";
+       cmd += filename;
+
+       std::cout << "---------------------------" << std::endl;
+       std::cout << "e-log post:" << cmd << std::endl;
+       system(cmd.c_str());
+       std::cout << "---------------------------" << std::endl;
+     
+     }
+
      
      //Now the plots for each individual test
      
@@ -927,9 +966,9 @@ void PixelTKFECDelay25Calibration::WriteRootFile(int newSDA, int newRDA, bool co
        }
        ((TPad*)(Canvases[i]))->Write();
      }
-
+     
    } else {
-
+     
      string longtitle = "RDa vs. SDa for portcard "+portcardName_+" and all modules";
      string shorttitle = "portcard_"+portcardName_+"_allmodules";
 
@@ -971,6 +1010,6 @@ void PixelTKFECDelay25Calibration::WriteRootFile(int newSDA, int newRDA, bool co
 	mk1->Draw();
      }
      ((TPad*)(c))->Write();
+     
    }
-
 }

@@ -106,7 +106,7 @@ PixelDelay25Calib::PixelDelay25Calib(vector< vector<string> > &tableMat) :
   in >> origSDa_;
 
   in >> tmp;
-
+  
   assert(tmp=="OrigRDa:");
   in >> origRDa_;
 
@@ -130,6 +130,10 @@ PixelDelay25Calib::PixelDelay25Calib(vector< vector<string> > &tableMat) :
   } else {
     commands_=0;
   }
+
+  in >> tmp;
+  assert(tmp=="writeElog:");
+  in >> writeElog_;
 
   //Number of steps in the grid
   gridSteps_ = range_/gridSize_;
@@ -220,6 +224,11 @@ PixelDelay25Calib::PixelDelay25Calib(std::string filename) :
     commands_=0;
   }
 
+  in >> tmp;
+  assert(tmp=="writeElog:");
+  in >> writeElog_;
+
+
   in.close();
 
   //Number of steps in the grid
@@ -258,6 +267,7 @@ void PixelDelay25Calib::writeSettings(std::string portcardName, std::string modu
   graphout_ << "RDaRange: " << range_ << endl;
   graphout_ << "GridSize: " << gridSize_ << endl;
   graphout_ << "Tests: " << numTests_ << endl;
+  graphout_ << "writeElog: " << writeElog_ << endl;
   return;
 }
 
@@ -304,7 +314,7 @@ void PixelDelay25Calib::writeASCII(std::string dir) const {
 
   out << "OrigSDa:"<<endl;
   out << origSDa_<<endl;
-  
+
   out << "OrigRDa:"<<endl;
   out << origRDa_<<endl;
   
@@ -320,6 +330,9 @@ void PixelDelay25Calib::writeASCII(std::string dir) const {
   out << "Commands:"<<endl;
   out << commands_<<endl;
   
+  out << "writeElog:"<<endl;
+  out << writeElog_<<endl;
+
   out.close();
 }
 

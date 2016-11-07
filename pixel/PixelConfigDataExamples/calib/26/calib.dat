@@ -3,8 +3,8 @@ Parameters:
 DumpFIFOs yes
 ReadFifo1 yes
 writeElog yes
-ScanMin 15
-ScanMax 40
+ScanMin 10
+ScanMax 35
 ScanStepSize 2
 GainMin 2
 GainMax 2
