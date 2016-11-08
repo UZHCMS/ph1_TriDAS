@@ -1,4 +1,6 @@
 Mode: ThresholdCalDelay
+Parameters:
+writeElog yes
 Rows:
 10
 Cols:

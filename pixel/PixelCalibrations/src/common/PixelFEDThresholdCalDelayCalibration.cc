@@ -190,11 +190,23 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::beginCalibration(xo
 
   }
 
+  writeElog = tempCalibObject_->parameterValue("writeElog") == "yes";
+  outtext.Form("%s/log.txt", outputDir().c_str());
+
+
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
   return reply;
 }
 
 xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap::MessageReference msg){
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+
+  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+  cmd += runDir();
+  cmd += " : VcThrCalDel Scan\" -m ";
+  cmd += outtext;
 
   //First we need to get the DAC settings for the ROCs
 
@@ -216,6 +228,8 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     //std::cout << "Reading DACs for module:"<<modulePath<<std::endl;
 
     PixelConfigInterface::get(tempDACs, "pixel/dac/"+modulePath, *theGlobalKey_);
+    ofs << "[DAC setting] pixel/dac/" << modulePath << std::endl;
+
     assert(tempDACs!=0);
     theDACs[*module_name]=tempDACs;
 
@@ -255,6 +269,16 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
   double numerator=0.0;
   bool valid;
 
+  gStyle->SetOptStat(0);
+
+
+  std::vector<TH2F*> histdic;
+  std::vector<bool> validdic;
+  std::vector<TLine*> linedic1;
+  std::vector<TLine*> linedic2;
+  std::vector<TLine*> linedic3;
+  std::vector<TLine*> linedic4;
+
   for(;it!=eff_.end();++it){
 
     string rocName=it->first.rocname();
@@ -287,12 +311,15 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     unsigned int oldCalDel=rocDACs->getCalDel();
       
     cout << "Old settings: VcThr="<<oldVcThr<<" CalDel=" << oldCalDel << endl;
+
       
     unsigned int newVcThr=it->second.getThreshold();
     unsigned int newCalDel=it->second.getCalDelay();
  
 
     cout << "New settings: VcThr="<<newVcThr<<" CalDel=" << newCalDel << endl;
+
+    ofs << "Settings: Old (VcThr, CalDel) = ("<<oldVcThr<<", " << oldCalDel << ") => New (VcThr, CalDel) = (" << newVcThr << ", " << newCalDel << ")" << std::endl;
 
     if (it->second.validSettings()){
 
@@ -302,6 +329,12 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
       theBranch_sum.new_VcThr=newVcThr;
       theBranch_sum.delta_VcThr=(float)oldVcThr-newVcThr;
 	
+      ofs << "[result] pass = 1 for " << it->first.rocname() << std::endl;
+      ofs << "[result] new_CalDel = " << newCalDel << std::endl;
+      ofs << "[result] delta_CalDel = " << (float)oldCalDel-newCalDel << std::endl;
+      ofs << "[result] new_VcThr = " << newVcThr << std::endl;
+      ofs << "[result] delta_VcThr = " << (float)oldVcThr-newVcThr << std::endl;
+
       tree->Fill();
       tree_sum->Fill();
 
@@ -310,7 +343,8 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     }
     else{
       cout << "Did not have valid settings for:" << it->first.rocname() << endl;
-	
+      ofs << "Did not have valid settings for:" << it->first.rocname() << endl;
+
 	
       theBranch_sum.new_CalDel=oldCalDel;
       theBranch_sum.delta_CalDel=0.0;
@@ -343,6 +377,8 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     histo2D.SetMaximum(1.0);
     histo2D.Draw("colz");
 
+    histdic.push_back(&histo2D);
+
     double deltaCalDelay=0.05*(max1-min1);
     double deltaVcThr=0.05*(max2-min2);
 
@@ -350,28 +386,83 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
 			oldCalDel+deltaCalDelay,oldVcThr);
     l1->SetLineColor(38);
     l1->Draw();
-    l1=new TLine(oldCalDel,oldVcThr-deltaVcThr,
-		 oldCalDel,oldVcThr+deltaVcThr);
-    l1->SetLineColor(38);
-    l1->Draw();
+
+    TLine* l2=new TLine(oldCalDel,oldVcThr-deltaVcThr,
+			oldCalDel,oldVcThr+deltaVcThr);
+    l2->SetLineColor(38);
+    l2->Draw();
+
+    linedic1.push_back(l1);
+    linedic2.push_back(l2);
+    validdic.push_back(valid);
 
     if (valid)
       {
-	TLine* l2=new TLine(newCalDel-deltaCalDelay,newVcThr, newCalDel+deltaCalDelay,newVcThr);
-	l2->SetLineColor(kMagenta);
-	l2->Draw();
-	l2=new TLine(newCalDel,newVcThr-deltaVcThr,
-		     newCalDel,newVcThr+deltaVcThr);
-	l2->SetLineColor(kWhite);
-	l2->Draw();
+	TLine* l3=new TLine(newCalDel-deltaCalDelay,newVcThr, newCalDel+deltaCalDelay,newVcThr);
+	l3->SetLineColor(kMagenta);
+	l3->Draw();
+
+	TLine *l4=new TLine(newCalDel,newVcThr-deltaVcThr,
+			    newCalDel,newVcThr+deltaVcThr);
+	l4->SetLineColor(kWhite);
+	l4->Draw();
+
+	linedic3.push_back(l3);
+	linedic4.push_back(l4);
+
       }
 
     canvas->Write();
-      
+
+    TString filename; 
+    filename = outputDir().c_str();
+    filename += "/";
+    filename += rocName.c_str();
+    filename += ".gif";
+    canvas->Print(filename);
+
+    cmd += " -f ";
+    cmd += filename;
+
   }
 
+
   outputFile_->Write();
-  outputFile_->Close();
+
+  if(writeElog){
+  
+//    TString cname = "summary";
+//    TCanvas *scanvas = new TCanvas(cname, cname);
+//    scanvas->Divide(4,4);
+//
+//    std::cout << "size = " << histdic.size() << std::endl;
+//    for(int ii=0; ii<histdic.size(); ii++){
+//      std::cout << ii << std::endl;
+//      scanvas->cd(ii+1);
+//      histdic[ii]->Draw("colz");
+//      linedic1[ii]->Draw();
+//      linedic2[ii]->Draw();
+//      if(validdic[ii]){
+//	linedic3[ii]->Draw();
+//	linedic4[ii]->Draw();
+//      }
+//    }
+
+
+    //    TString filename; 
+    //    filename = outputDir().c_str();
+    //    filename += "/summary_VcThrCalDel.gif";
+    //    scanvas->Print(filename);
+
+    
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    std::cout << "---------------------------" << std::endl;
+
+  }
+
+
       
   //write out root file
 
@@ -381,7 +472,7 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     dacs->second->writeASCII(outputDir());
   }
 
- 
+  outputFile_->Close(); 
 
 
   xoap::MessageReference reply = MakeSOAPMessageReference("EndCalibrationDone");

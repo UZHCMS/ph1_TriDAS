@@ -35,6 +35,9 @@ class PixelFEDThresholdCalDelayCalibration: public PixelFEDCalibrationBase {
 
  private:
 
+  bool writeElog;
+  TString outtext;
+
   pos::PixelCalibConfiguration* tempCalibObject_;
   map <unsigned int, std::set<unsigned int> > fedsAndChannels_;
   map <pos::PixelROCName, PixelEfficiency2DVcThrCalDel> eff_;
