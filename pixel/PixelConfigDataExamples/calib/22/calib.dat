@@ -2,6 +2,7 @@ Mode: ROCDelay
 Parameters:
 DumpFIFOs no
 ReadFifo1 yes
+writeElog yes
 Rows:
 Cols:
 VcalHigh

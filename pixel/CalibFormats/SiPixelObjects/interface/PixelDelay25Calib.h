@@ -49,6 +49,7 @@ namespace pos{
     std::set<std::string>& portcardList() {return portcardNames_;}
     bool allPortcards() {return allPortcards_;}
     bool allModules() {return allModules_;}
+    int getwriteElog() {return writeElog_;}
     int getGridSize() {return gridSize_;}
     int getGridSteps() {return gridSteps_;}
     int getNumberTests() {return numTests_;}
@@ -70,7 +71,7 @@ namespace pos{
 
     std::set<std::string> portcardNames_;
     bool allPortcards_, allModules_;
-    int origSDa_, origRDa_, range_, gridSize_, gridSteps_, numTests_, commands_;
+    int origSDa_, origRDa_, range_, gridSize_, gridSteps_, numTests_, commands_, writeElog_;
     std::ofstream graphout_;
     std::string graph_;
 

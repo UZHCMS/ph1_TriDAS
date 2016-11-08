@@ -48,6 +48,7 @@ xoap::MessageReference PixelFEDROCDelayCalibration::beginCalibration(xoap::Messa
 
   DumpFIFOs = tempCalibObject->parameterValue("DumpFIFOs") == "yes";
   ReadFifo1 = tempCalibObject->parameterValue("ReadFifo1") == "yes";
+  writeElog = tempCalibObject->parameterValue("writeElog") == "yes";
 
   if( ReadFifo1 ) setFIFO1Mode();//jen
 
@@ -72,6 +73,8 @@ xoap::MessageReference PixelFEDROCDelayCalibration::beginCalibration(xoap::Messa
 
   if (dacsToScan.size() < 3)
     BookEm("");
+
+  outtext.Form("%s/log.txt", outputDir().c_str());
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
   return reply;
@@ -192,7 +195,7 @@ void PixelFEDROCDelayCalibration::RetrieveData(unsigned state) {
 
        const std::vector<PixelROCName>& rocs = theNameTranslation_->getROCsFromFEDChannel(fedsAndChannels[ifed].first, (fedsAndChannels[ifed].second)[ch]);
        FillEm(state, fedsAndChannels[ifed].first, channel, 0, ch_decodedROCs.size(), rocs.size());       
-       for( int r = 0; r < rocs.size(); ++r ){
+       for( int r = 0; r < (int)rocs.size(); ++r ){
         bool ch_foundROC = std::find(ch_decodedROCs.begin(),ch_decodedROCs.end(),r+1)!=ch_decodedROCs.end();
         if( ch_foundROC ) FillEm(state, fedsAndChannels[ifed].first, channel, 0, 1, r);
        }
@@ -433,7 +436,6 @@ void PixelFEDROCDelayCalibration::Analyze() {
 
   }
 
-  CloseRootf();
 
   //now print summary and save it on text file
   std::map<std::string,std::vector<int> > FEDchannelsPerModule;
@@ -446,16 +448,75 @@ void PixelFEDROCDelayCalibration::Analyze() {
    }
   }
 
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+  ofs << "Inject signal : " << inject_ << std::endl;
+
   out << "Module                        | FED channels | port 0 phase | port 1 phase | DeltaROCDelay | # ROCs | Pass | \n";
   for( std::map<std::string,std::vector<int> >::iterator it = FEDchannelsPerModule.begin(); it != FEDchannelsPerModule.end(); ++it ){
    out << it->first << " | ";
-   for( unsigned int i = 0; i < (it->second).size(); ++i ) out << (it->second)[i] << " ";
+   ofs << "Module = " << it->first << ", ch = ";
+
+   for( unsigned int i = 0; i < (it->second).size(); ++i ){
+     out << (it->second)[i] << " ";
+     ofs << (it->second)[i] << " ";
+   }
+   ofs << std::endl;
+
    out << " | " << (bestROCDelay[it->first]&7) << "            | " << ((bestROCDelay[it->first]&56)>>3);
    out << "            | " << bestROCDelay[it->first] - currentTBMAdelay[it->first];
    out.precision(4);
    out << "            | " << nROCsForBestROCDelay[it->first] << "  | " << passState[it->first] << "    | \n";
+
+
+
+   ofs << "[result] port0 phase = " << (bestROCDelay[it->first]&7) << std::endl;
+   ofs << "[result] port1 phase = " << ((bestROCDelay[it->first]&56)>>3) << std::endl;
+   ofs << "[result] delay ROC delay = " << bestROCDelay[it->first] - currentTBMAdelay[it->first] << std::endl;
+   ofs << "[result] # ROCs = " << nROCsForBestROCDelay[it->first] << std::endl;
+   ofs << "[result] isPass = " << passState[it->first] << std::endl;
+
   }
-  
+
+
+  if(writeElog){
+
+    string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+    cmd += runDir();
+    cmd += " : ROC Delay Scan\" -m ";
+    cmd += outtext;
+    
+    for( std::map<std::string,std::vector<TH2F*> >::iterator it = ROCsHistoSum.begin(); it != ROCsHistoSum.end(); ++it ){
+      
+      TString cname = "Summary_";
+      cname += it->first;
+
+      TCanvas *c = new TCanvas(cname, cname);
+      it->second[0]->Draw("colztext");
+      
+      TString filename; 
+      filename += outputDir().c_str();
+      filename += "/";
+      filename += cname;
+      filename += ".gif";
+      //      filename.Form("%s/%s.gif", outputDir().c_str(), cname);
+      c->Print(filename);
+      
+      cmd += " -f ";
+      cmd += filename;
+      
+    }
+
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    std::cout << "---------------------------" << std::endl;
+
+
+  }
+
+
+  CloseRootf();  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -472,6 +533,9 @@ void PixelFEDROCDelayCalibration::BookEm(const TString& path) {
 
   scansROCs.clear();
   ROCsHistoSum.clear();
+
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(0);
 
   TString root_fn;
   if (path == "")
@@ -528,8 +592,8 @@ void PixelFEDROCDelayCalibration::BookEm(const TString& path) {
    std::vector<TH2F*> histosROC;
    TString hname(moduleName);
    TH2F* h_nROCHeaders = new TH2F(hname, hname, 8, 0, 8, 8, 0, 8 );
-   //h_nROCHeaders->SetXTitle("Port 1 phase");
-   //h_nROCHeaders->SetYTitle("Port 0 phase");
+   h_nROCHeaders->SetXTitle("Port 1 phase");
+   h_nROCHeaders->SetYTitle("Port 0 phase");
    histosROC.push_back(h_nROCHeaders);   
    ROCsHistoSum[moduleName] = histosROC;
     
