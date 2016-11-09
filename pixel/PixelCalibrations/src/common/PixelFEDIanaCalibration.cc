@@ -53,6 +53,7 @@ xoap::MessageReference PixelFEDIanaCalibration::beginCalibration(xoap::MessageRe
   assert(tempCalibObject != 0);
 
   tempCalibObject->writeASCII(outputDir());
+  writeElog = tempCalibObject->parameterValue("writeElog") == "yes";
 
   setFIFO1Mode();//jen
 
@@ -75,6 +76,8 @@ xoap::MessageReference PixelFEDIanaCalibration::beginCalibration(xoap::MessageRe
     for( unsigned int i = 0; i < dacvals.size(); ++i ) std::cout << " dac value " << i << " is " << dacvals[i] << std::endl;
   }
 
+
+  outtext.Form("%s/log.txt", outputDir().c_str()); 
   BookEm("");
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
@@ -205,11 +208,19 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
 
   ofstream out((outputDir()+"/iana.dat").c_str()); //leave the file method intact for now
   assert(out.good()); //file method
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
   
   branch theBranch;
   branch_sum theBranch_sum;
   TDirectory* dirSummaries = gDirectory->mkdir("SummaryTrees","SummaryTrees");
   dirSummaries->cd();
+
+  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+  cmd += runDir();
+  cmd += " : Iana Scan\" -m ";
+  cmd += outtext;
 
   TTree* tree = new TTree("PassState","PassState");
   TTree* tree_sum =new TTree("SummaryInfo","SummaryInfo");
@@ -303,7 +314,20 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
 
         rootDirs.cdDirectory(theROC);
         PixelIanaAnalysis analysis(true);
-        analysis.goIana(theROC.rocname(),oldVana,npoints,x, y, ey,out);
+	
+	string filename = outputDir().c_str();
+	filename += "/";
+	filename += theROC.rocname();
+	filename += ".gif";
+
+        analysis.goIana(theROC.rocname(),oldVana,npoints,x, y, ey,out, filename.c_str());
+
+	if(npoints!=0){
+	  cmd += " -f ";
+	  cmd += filename;
+	}else{
+	  ofs << "[warning] no points available ... skip to upload graphs to e-log" << std::endl;
+	}
 
         //theBranch_sum.maxIana = analysis.maxIana;
         theBranch_sum.fitChisquare = analysis.fitChisquare;
@@ -311,6 +335,8 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
         theBranch_sum.deltaVana = analysis.newVana - oldVana;
         theBranch_sum.newIana = analysis.newIana;
         theBranch.pass = analysis.pass;
+
+	ofs << "[result] ROC = " << theROC.rocname() << ", fit chi2 = " << analysis.fitChisquare << ", old Vana = " << analysis.oldVana << ", new Vana = " << analysis.newVana << ", delta Vana = " << analysis.newVana - oldVana << ", new Iana = " << analysis.newIana << ", Pass = " << analysis.pass << std::endl;
 
         tree->Fill();
         tree_sum->Fill();
@@ -327,6 +353,14 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
    }//close for2   
   }//close for 1    
 
+
+  if(writeElog){
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    std::cout << "---------------------------" << std::endl;
+  }
+
   for (std::map<PixelModuleName,PixelDACSettings*>::const_iterator idacs = dacsettings_.begin(); idacs != dacsettings_.end(); ++idacs)
     idacs->second->writeASCII(outputDir());
   
@@ -336,6 +370,15 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void PixelFEDIanaCalibration::VdigAnalysis(PixelCalibConfiguration* tmpCalib) {  
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+  
+  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+  cmd += runDir();
+  cmd += " : Vdigi Scan\" -m ";
+  cmd += outtext;
+
 
   branch_sum_vdig theBranch;
   TDirectory* dirSummaries = gDirectory->mkdir("SummaryTrees","SummaryTrees");
@@ -416,11 +459,29 @@ void PixelFEDIanaCalibration::VdigAnalysis(PixelCalibConfiguration* tmpCalib) {
 
         delete froc;
 
+	TString cname = "Summary_";
+	cname += theROC.rocname();
+
+	TCanvas *can = new TCanvas(cname, cname);
+
         hVdig->Draw("HIST");
         hVdig->Write();
 
         theBranch.Mean = hVdig->GetMean();
         theBranch.RMS = hVdig->GetRMS();
+
+	ofs << "[result] Mean = " << hVdig->GetMean() << ", RMS = " << hVdig->GetRMS() << " for " << theROC.rocname().c_str() << std::endl;
+
+	TString filename = outputDir().c_str();
+	filename += "/";
+	filename += theROC.rocname().c_str();
+	filename += ".gif";
+	
+	can->Print(filename);
+
+	cmd += " -f ";
+	cmd += filename;
+
         tree->Fill();
 
      }            
@@ -429,6 +490,14 @@ void PixelFEDIanaCalibration::VdigAnalysis(PixelCalibConfiguration* tmpCalib) {
     in.close();  
    }//close loop on fed channels  
   }//close loop on feds  
+
+  if(writeElog){
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    std::cout << "---------------------------" << std::endl;
+  }
+
 
   CloseRootf();
 

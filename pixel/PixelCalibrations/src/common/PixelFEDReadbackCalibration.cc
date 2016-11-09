@@ -50,6 +50,8 @@ xoap::MessageReference PixelFEDReadbackCalibration::beginCalibration(xoap::Messa
 
   PixelCalibConfiguration* tempCalibObject = dynamic_cast<PixelCalibConfiguration*>(theCalibObject_);
   assert(tempCalibObject != 0);
+  
+  writeElog = tempCalibObject->parameterValue("writeElog") == "yes";
 
   tempCalibObject->writeASCII(outputDir());
 
@@ -64,6 +66,7 @@ xoap::MessageReference PixelFEDReadbackCalibration::beginCalibration(xoap::Messa
     for( unsigned int i = 0; i < dacvals.size(); ++i ) std::cout << " dac value " << i << " is " << dacvals[i] << std::endl;
   }
 
+  outtext.Form("%s/log.txt", outputDir().c_str());
   BookEm("");
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
@@ -168,7 +171,7 @@ void PixelFEDReadbackCalibration::RetrieveData(unsigned state) {
        }
 
        if (az == 0 && mk != 0x1e ){
-	 std::cout << "check : " << mk << " " << rocs.size() << std::endl;
+	 //	 std::cout << "check : " << mk << " " << rocs.size() << std::endl;
         if( mk <= rocs.size() ){
          last_dacs[fedsAndChannels[ifed].first][channel][mk].push_back(f8);
         }
@@ -192,6 +195,12 @@ void PixelFEDReadbackCalibration::RetrieveData(unsigned state) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void PixelFEDReadbackCalibration::Analyze() { 
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
+
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(0);
 
   PixelCalibConfiguration* tempCalibObject = dynamic_cast<PixelCalibConfiguration*>(theCalibObject_);
   assert(tempCalibObject != 0);
@@ -238,6 +247,12 @@ void PixelFEDReadbackCalibration::Analyze() {
  tree->Branch("PassState",&theBranch,"pass/F:moduleName/C",4096000);
   tree_sum->Branch("SummaryInfo",&theBranch_sum,"deltaDelayX/I:deltaDelayY/I:newDelayX/I:newDelayY/I:nROCs/D:moduleName/C",4096000);
   rootf->cd();
+
+  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
+  cmd += runDir();
+  cmd += " : TBMPLL delay scan for readback Test\" -m ";
+  cmd += outtext;
+
 
   for( std::map<std::string,std::vector<TH2F*> >::iterator it = ROCsHistoSum.begin(); it != ROCsHistoSum.end(); ++it ){
 
@@ -320,9 +335,44 @@ void PixelFEDReadbackCalibration::Analyze() {
    strcpy(theBranch.moduleName,moduleName.c_str());
    tree->Fill();
    tree_sum->Fill();
+   
+   ofs << "[result] moduleName = "  << moduleName << std::endl;
+   ofs << "[result] deltaDelayX = " << delayXnew-delayXold << std::endl;
+   ofs << "[result] deltaDelayY = " << delayYnew-delayYold << std::endl;
+   ofs << "[result] new Delay X = " << delayXnew << std::endl;
+   ofs << "[result] new Delay Y = " << delayYnew << std::endl;
+   ofs << "[result] nROCsForDelay = " << nROCsForDelay[moduleName] << std::endl;
+   ofs << "[result] passSate = "  << passState[moduleName] << std::endl;
+
+
+   TString cname = "summary_";
+   cname += it->first;
+
+   TCanvas *c = new TCanvas(cname, cname);
+   it->second[0]->Draw("colztext");
+
+   TString filename = outputDir().c_str();
+   filename += "/";
+   filename += cname;
+   filename += ".gif";
+
+   c->Print(filename);
+
+   cmd += " -f ";
+   cmd += filename;
 
   }
   
+  if(writeElog){
+    std::cout << "---------------------------" << std::endl;
+    std::cout << "e-log post:" << cmd << std::endl;
+    system(cmd.c_str());
+    //    int i = system(cmd.c_str());
+    // std::cout << "returnCode = " << i << std::endl;
+    std::cout << "---------------------------" << std::endl;    
+  }
+
+
   CloseRootf();
 
 }

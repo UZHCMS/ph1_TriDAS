@@ -25,7 +25,7 @@ FIFO3Decoder::FIFO3Decoder(uint64_t *buffer)
       if (rocid<25) hits_.push_back(buf[index]);
       if (rocid>27&&(rocid!=30)) {
         //FIXME Code should set some error FLAG but can not print message here
-        std::cout << "buf="<<std::hex<<buf[index]<<" rocid="<<rocid<<std::endl;//<<std::dec<<" channel="<<channel<<" rocid="<<rocid<<std::endl;
+	//        std::cout << "buf="<<std::hex<<buf[index]<<" rocid="<<rocid<<std::endl;//<<std::dec<<" channel="<<channel<<" rocid="<<rocid<<std::endl;
       }
 
     }

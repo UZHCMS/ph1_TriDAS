@@ -10,10 +10,20 @@
 #include <cstdint>
 #include <fstream>
 
-class TFile;
-class TH1F;
-class TH2F;
-class TH3F;
+#include<TFile.h>
+#include<TTree.h>
+#include<TH1F.h>
+#include<TH1D.h>
+#include<TH2F.h>
+#include<TLegend.h>
+#include<TCanvas.h>
+#include<TROOT.h>
+#include<TStyle.h>
+
+//class TFile;
+//class TH1F;
+//class TH2F;
+//class TH3F;
 
 class PixelFEDIanaCalibration: public PixelFEDCalibrationBase {
  public:
@@ -25,6 +35,9 @@ class PixelFEDIanaCalibration: public PixelFEDCalibrationBase {
   virtual xoap::MessageReference endCalibration(xoap::MessageReference msg);
 
  private:
+  TString outtext;
+  bool writeElog;
+
   void RetrieveData(unsigned int state);
   void Analyze();
   void IanaAnalysis(pos::PixelCalibConfiguration* tmpCalib);

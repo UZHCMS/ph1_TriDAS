@@ -9,10 +9,20 @@
 #include <cstdint>
 #include <fstream>
 
-class TFile;
-class TH1F;
-class TH2F;
-class TH3F;
+#include<TFile.h>
+#include<TTree.h>
+#include<TH1F.h>
+#include<TH1D.h>
+#include<TH2F.h>
+#include<TLegend.h>
+#include<TCanvas.h>
+#include<TROOT.h>
+#include<TStyle.h>
+
+//class TFile;
+//class TH1F;
+//class TH2F;
+//class TH3F;
 
 class PixelFEDReadbackCalibration: public PixelFEDCalibrationBase {
  public:
@@ -24,6 +34,9 @@ class PixelFEDReadbackCalibration: public PixelFEDCalibrationBase {
   virtual xoap::MessageReference endCalibration(xoap::MessageReference msg);
 
  private:
+  bool writeElog;
+  TString outtext;
+
   void RetrieveData(unsigned int state);
   void Analyze();
   void CloseRootf();

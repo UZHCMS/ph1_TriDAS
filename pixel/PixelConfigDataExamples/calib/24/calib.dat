@@ -1,5 +1,6 @@
 Mode: Vdig
 Parameters:
+writeElog yes
 SleepTime 8
 SleepTimeAtZero 8
 NPoints 15

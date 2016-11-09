@@ -1,5 +1,6 @@
 Mode: TBMDelayForReadback
 Parameters:
+writeElog yes
 Rows:
 10
 Cols:
