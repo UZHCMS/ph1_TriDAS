@@ -214,11 +214,11 @@ PixelCalibrationBase* PixelCalibrationFactory::getCalibration(const std::string&
     return new PixelROCDelay25Calibration(*pixSupConfPtr, soapCmdrPtr);
   }
 
-  if (calibName=="TBMDelay") {
+  if (calibName=="TBMDelay" || calibName=="TBMDelaySimple") {
     return new PixelTBMDelayCalibration(*pixSupConfPtr, soapCmdrPtr);
   }
 
-  if (calibName=="ROCDelay") {
+  if (calibName=="ROCDelay" || calibName=="ROCDelayInjection") {
     return new PixelROCDelayCalibration(*pixSupConfPtr, soapCmdrPtr);
   }
 
@@ -371,7 +371,7 @@ PixelFEDCalibrationBase* PixelCalibrationFactory::getFEDCalibration(const std::s
     return new PixelFEDROCDelay25Calibration(*pixFEDSupConfPtr, soapCmdrPtr);
   }
 
-  if (calibName=="TBMDelay") {
+  if (calibName=="TBMDelay" || calibName=="TBMDelaySimple") {
     return new PixelFEDTBMDelayCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
   }
 
@@ -379,7 +379,7 @@ PixelFEDCalibrationBase* PixelCalibrationFactory::getFEDCalibration(const std::s
     return new PixelFEDIanaCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
   } 
 
-  if (calibName=="ROCDelay") {
+  if (calibName=="ROCDelay" || calibName=="ROCDelayInjection") {
     return new PixelFEDROCDelayCalibration(*pixFEDSupConfPtr, soapCmdrPtr);
   }
 

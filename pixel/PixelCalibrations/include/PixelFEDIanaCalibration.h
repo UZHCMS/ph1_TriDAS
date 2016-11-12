@@ -6,6 +6,7 @@
 #include "PixelUtilities/PixelFEDDataTools/include/Moments.h"
 #include "PixelUtilities/PixelFEDDataTools/include/PixelScanRecord.h"
 #include "CalibFormats/SiPixelObjects/interface/PixelCalibConfiguration.h"
+#include "PixelUtilities/PixelRootUtilities/include/PixelElogMaker.h"
 
 #include <cstdint>
 #include <fstream>
@@ -37,6 +38,7 @@ class PixelFEDIanaCalibration: public PixelFEDCalibrationBase {
  private:
   TString outtext;
   bool writeElog;
+  PixelElogMaker* elog;
 
   void RetrieveData(unsigned int state);
   void Analyze();

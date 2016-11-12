@@ -3,6 +3,7 @@
 
 #include "PixelCalibrations/include/PixelCalibrationBase.h"
 #include "PixelUtilities/PixelRootUtilities/include/PixelRootDirectoryMaker.h"
+#include "PixelUtilities/PixelRootUtilities/include/PixelElogMaker.h"
 #include "toolbox/exception/Handler.h"
 #include "toolbox/Event.h"
 
@@ -93,6 +94,7 @@ class PixelPOHBiasCalibration : public PixelCalibrationBase {
 //  TString cname_end;
 
   PixelRootDirectoryMaker* rootDirs;
+  PixelElogMaker* elog;
   std::vector<std::string> vectorOfPortcards;
   std::vector<std::string> portcard_;
   std::vector<int> aohnumber_;

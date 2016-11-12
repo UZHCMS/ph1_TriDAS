@@ -1,6 +1,6 @@
 Mode: POHBias
 Parameters:
-DumpFIFOs yes
+DumpFIFOs no
 ReadFifo1 yes
 writeElog yes
 ScanMin 10

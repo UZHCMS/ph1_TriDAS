@@ -78,6 +78,13 @@ xoap::MessageReference PixelFEDIanaCalibration::beginCalibration(xoap::MessageRe
 
 
   outtext.Form("%s/log.txt", outputDir().c_str()); 
+
+  string init_str = "unknown";
+  if(tempCalibObject->mode()=="Iana")  init_str = "Iana calibration";
+  else if(tempCalibObject->mode()=="Vdig") init_str = "Vdig calibration";
+
+  elog = new PixelElogMaker(init_str);
+
   BookEm("");
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
@@ -217,10 +224,7 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
   TDirectory* dirSummaries = gDirectory->mkdir("SummaryTrees","SummaryTrees");
   dirSummaries->cd();
 
-  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-  cmd += runDir();
-  cmd += " : Iana Scan\" -m ";
-  cmd += outtext;
+  string cmd = "";
 
   TTree* tree = new TTree("PassState","PassState");
   TTree* tree_sum =new TTree("SummaryInfo","SummaryInfo");
@@ -355,10 +359,7 @@ void PixelFEDIanaCalibration::IanaAnalysis(PixelCalibConfiguration* tmpCalib) {
 
 
   if(writeElog){
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "e-log post:" << cmd << std::endl;
-    system(cmd.c_str());
-    std::cout << "---------------------------" << std::endl;
+    elog->post(runDir(), (string)outtext, cmd);
   }
 
   for (std::map<PixelModuleName,PixelDACSettings*>::const_iterator idacs = dacsettings_.begin(); idacs != dacsettings_.end(); ++idacs)
@@ -374,11 +375,7 @@ void PixelFEDIanaCalibration::VdigAnalysis(PixelCalibConfiguration* tmpCalib) {
   std::ofstream ofs(outtext);
   ofs << std::endl;
   
-  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-  cmd += runDir();
-  cmd += " : Vdigi Scan\" -m ";
-  cmd += outtext;
-
+  string cmd = "";
 
   branch_sum_vdig theBranch;
   TDirectory* dirSummaries = gDirectory->mkdir("SummaryTrees","SummaryTrees");
@@ -492,10 +489,7 @@ void PixelFEDIanaCalibration::VdigAnalysis(PixelCalibConfiguration* tmpCalib) {
   }//close loop on feds  
 
   if(writeElog){
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "e-log post:" << cmd << std::endl;
-    system(cmd.c_str());
-    std::cout << "---------------------------" << std::endl;
+    elog->post(runDir(), (string)outtext, cmd);
   }
 
 

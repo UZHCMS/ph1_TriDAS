@@ -75,6 +75,7 @@ xoap::MessageReference PixelFEDROCDelayCalibration::beginCalibration(xoap::Messa
     BookEm("");
 
   outtext.Form("%s/log.txt", outputDir().c_str());
+  elog = new PixelElogMaker("ROC Delay Scan");
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
   return reply;
@@ -470,9 +471,11 @@ void PixelFEDROCDelayCalibration::Analyze() {
 
 
 
+   ofs << "[result] current ROC delay = " << currentTBMAdelay[it->first] << std::endl;
+   ofs << "[result] best ROC delay = " << bestROCDelay[it->first] << std::endl;
+   ofs << "[result] delta ROC delay = " << bestROCDelay[it->first] - currentTBMAdelay[it->first] << std::endl;
    ofs << "[result] port0 phase = " << (bestROCDelay[it->first]&7) << std::endl;
    ofs << "[result] port1 phase = " << ((bestROCDelay[it->first]&56)>>3) << std::endl;
-   ofs << "[result] delay ROC delay = " << bestROCDelay[it->first] - currentTBMAdelay[it->first] << std::endl;
    ofs << "[result] # ROCs = " << nROCsForBestROCDelay[it->first] << std::endl;
    ofs << "[result] isPass = " << passState[it->first] << std::endl;
 
@@ -481,10 +484,7 @@ void PixelFEDROCDelayCalibration::Analyze() {
 
   if(writeElog){
 
-    string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-    cmd += runDir();
-    cmd += " : ROC Delay Scan\" -m ";
-    cmd += outtext;
+    string cmd = "";
     
     for( std::map<std::string,std::vector<TH2F*> >::iterator it = ROCsHistoSum.begin(); it != ROCsHistoSum.end(); ++it ){
       
@@ -507,12 +507,7 @@ void PixelFEDROCDelayCalibration::Analyze() {
       
     }
 
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "e-log post:" << cmd << std::endl;
-    system(cmd.c_str());
-    std::cout << "---------------------------" << std::endl;
-
-
+    elog->post(runDir(), (string)outtext, cmd);
   }
 
 

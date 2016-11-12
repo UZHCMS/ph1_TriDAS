@@ -64,8 +64,9 @@ void PixelPOHBiasCalibration::beginCalibration() {
   tempCalibObject->writeASCII(outputDir());
   std::cout << "[INFO] OutputDir = " << outputDir() << std::endl;
 
-  outtext.Form("%s/log.txt", outputDir().c_str());
-  
+  outtext.Form("%s/log.txt", outputDir().c_str()); 
+  elog = new PixelElogMaker("POH Bias");
+ 
   BookEm();
 }
 
@@ -351,10 +352,7 @@ void PixelPOHBiasCalibration::endCalibration() {
 
   if(writeElog){
 
-    string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-    cmd += runDir();
-    cmd += " : POH Bias Scan\" -m ";
-    cmd += outtext;
+    string cmd = "";
 
     for(std::map<int,std::map<int, std::map<int, TH1F* > > >::iterator it1 = histos.begin(); it1 != histos.end(); ++it1){
       
@@ -411,12 +409,7 @@ void PixelPOHBiasCalibration::endCalibration() {
 
     }
 
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "e-log post:" << cmd << std::endl;
-    system(cmd.c_str());
-    //    int i = system(cmd.c_str());
-    // std::cout << "returnCode = " << i << std::endl;
-    std::cout << "---------------------------" << std::endl;
+    elog->post(runDir(), (string)outtext, cmd);
   }
 
 

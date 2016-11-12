@@ -1,0 +1,14 @@
+Mode: TBMDelaySimple
+Parameters:
+DumpFIFOs yes
+ReadFifo1 yes
+writeElog yes
+Rows:
+10
+Cols:
+10
+VcalHigh
+Set: Vcal 200
+Repeat: 10
+Rocs:
+all

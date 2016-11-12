@@ -126,11 +126,14 @@ xoap::MessageReference PixelFEDPOHBiasCalibration::RetrieveData(unsigned AOHBias
 
     if( (int)theFIFO1Decoder.globalChannel() == (int)channel ){
       found_TBMA = theFIFO1Decoder.foundTBM();
-	
-      std::cout << "-----------------------------------" << std::endl;
-      std::cout << "Contents of FIFO 1 for channel " << channel << " (status = " << statusFifo1 << ")" << std::endl;
-      std::cout << "-----------------------------------" << std::endl;
-      theFIFO1Decoder.printToStream(std::cout);
+
+      if( DumpFIFOs ){	
+	std::cout << "-----------------------------------" << std::endl;
+	std::cout << "Contents of FIFO 1 for channel " << channel << " (status = " << statusFifo1 << ")" << std::endl;
+	std::cout << "-----------------------------------" << std::endl;
+	theFIFO1Decoder.printToStream(std::cout);
+      }
+
     }
   }
 

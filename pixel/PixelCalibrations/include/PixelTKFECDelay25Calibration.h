@@ -19,6 +19,7 @@
 #include "TH2F.h"
 #include "TMarker.h"
 #include "PixelUtilities/PixelRootUtilities/include/PixelRootDirectoryMaker.h"
+#include "PixelUtilities/PixelRootUtilities/include/PixelElogMaker.h"
 #include <TDirectory.h>
 
 #include "PixelCalibrations/include/PixelTKFECCalibrationBase.h"
@@ -56,6 +57,8 @@ class PixelTKFECDelay25Calibration: public PixelTKFECCalibrationBase {
 
   int writeElog_;
   TString outtext;
+  PixelElogMaker* elog;
+
   std::ofstream ofs;
 
   pos::PixelDelay25Calib* tempDelay25_;

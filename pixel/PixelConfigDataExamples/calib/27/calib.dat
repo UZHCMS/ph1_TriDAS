@@ -1,0 +1,13 @@
+Mode: CalDelCalibration
+Parameters: Fraction 0.50
+Rows:
+20 | 40
+Cols:
+20 | 40
+VcalHigh
+Scan: CalDel 0 255 1
+Scan: WBC 97 99 1
+Set: Vcal 120
+Repeat: 10
+Rocs:
+all

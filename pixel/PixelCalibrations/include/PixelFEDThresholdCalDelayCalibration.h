@@ -17,6 +17,7 @@
 #include "PixelCalibrations/include/PixelFEDCalibrationBase.h"
 #include "PixelCalibrations/include/PixelEfficiency2DVcThrCalDel.h"
 #include "CalibFormats/SiPixelObjects/interface/PixelCalibConfiguration.h"
+#include "PixelUtilities/PixelRootUtilities/include/PixelElogMaker.h"
 #include "TFile.h"
 
 class PixelFEDThresholdCalDelayCalibration: public PixelFEDCalibrationBase {
@@ -37,6 +38,7 @@ class PixelFEDThresholdCalDelayCalibration: public PixelFEDCalibrationBase {
 
   bool writeElog;
   TString outtext;
+  PixelElogMaker* elog;
 
   pos::PixelCalibConfiguration* tempCalibObject_;
   map <unsigned int, std::set<unsigned int> > fedsAndChannels_;

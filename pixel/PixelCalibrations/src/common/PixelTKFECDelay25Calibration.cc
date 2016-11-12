@@ -504,6 +504,8 @@ xoap::MessageReference PixelTKFECDelay25Calibration::beginCalibration(xoap::Mess
  
 
   outtext.Form("%s/log.txt", outputDir().c_str());
+  elog = new PixelElogMaker("Delay25 Scan");
+
   ofs.open(outtext);
   ofs << std::endl;
 
@@ -901,18 +903,9 @@ void PixelTKFECDelay25Calibration::WriteRootFile(int newSDA, int newRDA, bool co
      
      if(writeElog_){
        
-       string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-       cmd += runDir();
-       cmd += " : Delay25 Scan\" -m ";
-       cmd += outtext;
-       cmd += " -f ";
+       string cmd = " -f ";
        cmd += filename;
-
-       std::cout << "---------------------------" << std::endl;
-       std::cout << "e-log post:" << cmd << std::endl;
-       system(cmd.c_str());
-       std::cout << "---------------------------" << std::endl;
-     
+       elog->post(runDir(), (string)outtext, cmd);     
      }
 
      

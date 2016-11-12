@@ -192,7 +192,7 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::beginCalibration(xo
 
   writeElog = tempCalibObject_->parameterValue("writeElog") == "yes";
   outtext.Form("%s/log.txt", outputDir().c_str());
-
+  elog = new PixelElogMaker("VcThrCalDel Scan");
 
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
   return reply;
@@ -203,10 +203,7 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
   std::ofstream ofs(outtext);
   ofs << std::endl;
 
-  string cmd = "/home/cmspixel/user/local/elog -h elog.physik.uzh.ch -p 8080 -s -v -u cmspixel uzh2014 -n 0 -l Pixel -a Filename=\"[POS e-log] ";
-  cmd += runDir();
-  cmd += " : VcThrCalDel Scan\" -m ";
-  cmd += outtext;
+  string cmd = "";
 
   //First we need to get the DAC settings for the ROCs
 
@@ -454,12 +451,8 @@ xoap::MessageReference PixelFEDThresholdCalDelayCalibration::endCalibration(xoap
     //    filename += "/summary_VcThrCalDel.gif";
     //    scanvas->Print(filename);
 
+    elog->post(runDir(), (string)outtext, cmd);
     
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "e-log post:" << cmd << std::endl;
-    system(cmd.c_str());
-    std::cout << "---------------------------" << std::endl;
-
   }
 
 
