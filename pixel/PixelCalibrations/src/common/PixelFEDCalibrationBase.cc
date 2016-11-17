@@ -99,7 +99,8 @@ void PixelFEDCalibrationBase::setFEDModeAndControlRegister(unsigned int mode,
     iFED->second->setControlRegister(control);
      //lea and jen
     iFED->second->InitDummy();
-    iFED->second->SetFitelFiberSwitchTopDauCard(1);
+    //    iFED->second->SetFitelFiberSwitchTopDauCard(1);
+    iFED->second->SetFitelFiberSwitchTopDauCard(0);
     iFED->second->SetFitelFiberSwitchBottomDauCard(0);
   }
 }

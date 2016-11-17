@@ -46,11 +46,15 @@ PixelFEDCalDelCalibration::PixelFEDCalDelCalibration(const PixelFEDSupervisorCon
 
 xoap::MessageReference PixelFEDCalDelCalibration::execute(xoap::MessageReference msg)
 {
+  //  std::cout <<"debug : !!!!!!!!!!!!!!! execute" << std::endl;
+
   std::map <unsigned int, std::set<unsigned int> >::iterator i_fedsAndChannels;
   unsigned int state=event_/tempCalibObject_->nTriggersPerPattern();
 
   unsigned int ithreshold=tempCalibObject_->scanCounter(name1_,state);
   unsigned int icaldelay=tempCalibObject_->scanCounter(name2_,state);
+
+  //  std::cout <<"debug 1" << std::endl;
 
   try {
 
@@ -58,6 +62,9 @@ xoap::MessageReference PixelFEDCalDelCalibration::execute(xoap::MessageReference
 
       unsigned int fednumber=i_fedsAndChannels->first;
       unsigned int fedcrate=theFEDConfiguration_->crateFromFEDNumber(fednumber);
+
+      //      std::cout <<"debug 2" << fednumber << " " << fedcrate << std::endl;
+
       if (fedcrate!=crate_) continue;
 
       unsigned long vmeBaseAddress=theFEDConfiguration_->VMEBaseAddressFromFEDNumber(fednumber);
@@ -66,6 +73,8 @@ xoap::MessageReference PixelFEDCalDelCalibration::execute(xoap::MessageReference
 
       uint64_t buffer64[fifo3Depth];
       int status=iFED->spySlink64(buffer64);
+
+      //      std::cout <<"debug 3" << status << std::endl;
 
       if (status>0) {
 	if(0){
@@ -82,12 +91,14 @@ xoap::MessageReference PixelFEDCalDelCalibration::execute(xoap::MessageReference
 	unsigned int nhits=decode.nhits();
 
 	//std::cout << "nhits:"<<nhits<<std::endl;
+	//	std::cout <<"debug 4" << nhits << std::endl;
 
 	for (unsigned int ihit=0;ihit<nhits;ihit++){
 	  unsigned int rocid=decode.rocid(ihit);
 	  //assert(rocid>0);
 	  unsigned int channel=decode.channel(ihit);
 
+	  //	  std::cout <<"debug 5" << ihit << " " << channel << std::endl;
 
 	  if(rocid<=0) {
 
@@ -167,6 +178,7 @@ xoap::MessageReference PixelFEDCalDelCalibration::beginCalibration(xoap::Message
 
   name1_=tempCalibObject_->scanName(1);
   name2_=tempCalibObject_->scanName(0);
+  writeElog = tempCalibObject_->parameterValue("writeElog") == "yes";
 
   unsigned int nScanVars=tempCalibObject_->numberOfScanVariables();
   assert(nScanVars>1);
@@ -213,11 +225,20 @@ xoap::MessageReference PixelFEDCalDelCalibration::beginCalibration(xoap::Message
  
   } 
 
+  //  std::cout <<"debug : !!!!!!!!!!!!!!! BEGIN calib" << std::endl;
+
+
+  outtext.Form("%s/log.txt", outputDir().c_str()); 
+  elog = new PixelElogMaker("CalDelCalibration");
+
   xoap::MessageReference reply = MakeSOAPMessageReference("BeginCalibrationDone");
   return reply;
 }
 
 xoap::MessageReference PixelFEDCalDelCalibration::endCalibration(xoap::MessageReference msg){
+
+  std::ofstream ofs(outtext);
+  ofs << std::endl;
 
     //First we need to get the DAC settings for the ROCs
 
@@ -331,6 +352,7 @@ xoap::MessageReference PixelFEDCalDelCalibration::endCalibration(xoap::MessageRe
  	calDel=(int)it->second.getCalDel();
 	int old_calDel = theDACs[module]->getDACSettings(it->first)->getCalDel();
 	cout<<" Failed for "<<rocsname<<" "<<calDel<<" use old value "<<old_calDel<<endl;
+	ofs<<" Failed for "<<rocsname<<" "<<calDel<<" use old value "<<old_calDel<<endl;
       }
 
       tree->Fill();
@@ -387,9 +409,19 @@ xoap::MessageReference PixelFEDCalDelCalibration::endCalibration(xoap::MessageRe
     histo_CalDel->GetXaxis()->SetTitle("CalDel");
     canvas1->Write();
     
+    TString filename; 
+    filename.Form("%s/summary_c.gif", outputDir().c_str());
+    canvas1->Print(filename);
+
     outputFile_->Write();
     outputFile_->Close();
 
+    if(writeElog){
+      string cmd = " -f ";
+      cmd += filename;
+      elog->post(runDir(), (string)outtext, cmd);
+    }
+    
    
     map<PixelModuleName,PixelDACSettings*>::iterator dacs=theDACs.begin();
 
@@ -398,6 +430,9 @@ xoap::MessageReference PixelFEDCalDelCalibration::endCalibration(xoap::MessageRe
     }
 
     cout << "In PixelFEDCalDelCalibration::endCalibration()" << endl;
+
+    //    std::cout <<"debug : !!!!!!!!!!!!!!! END calib" << std::endl;
+
     xoap::MessageReference reply = MakeSOAPMessageReference("EndCalibrationDone");
     return reply;
 }

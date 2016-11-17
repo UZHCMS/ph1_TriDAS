@@ -4384,7 +4384,8 @@ xoap::MessageReference PixelFEDSupervisor::ReadDigFEDOSDFifo(xoap::MessageRefere
   unsigned int VMEBaseAddress = atoi(parametersReceived[0].value_.c_str());
   unsigned int channel = atoi(parametersReceived[1].value_.c_str());
   FEDInterface_[VMEBaseAddress]->InitDummy();
-  FEDInterface_[VMEBaseAddress]->SetFitelFiberSwitchTopDauCard(1);
+  //  FEDInterface_[VMEBaseAddress]->SetFitelFiberSwitchTopDauCard(1);
+  FEDInterface_[VMEBaseAddress]->SetFitelFiberSwitchTopDauCard(0);
   FEDInterface_[VMEBaseAddress]->SetFitelFiberSwitchBottomDauCard(0);
   uint32_t data = FEDInterface_[VMEBaseAddress]->readDigFEDOSDFifo(channel);
   std::cout << "ReadDigFEDOSDFifo: RocHi: " << ((data & 0xFFFF0000) >> 16) << " RocLo: " << (data & 0xFFFF) << std::endl;

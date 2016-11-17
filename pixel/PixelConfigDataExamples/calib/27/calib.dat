@@ -1,9 +1,10 @@
 Mode: CalDelCalibration
 Parameters: Fraction 0.50
+writeElog yes
 Rows:
-20 | 40
+10
 Cols:
-20 | 40
+10
 VcalHigh
 Scan: CalDel 0 255 1
 Scan: WBC 97 99 1

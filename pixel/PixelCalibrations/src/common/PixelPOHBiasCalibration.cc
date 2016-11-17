@@ -100,6 +100,7 @@ bool PixelPOHBiasCalibration::execute() {
     Attribute_Vector parametersToTKFEC(1);
     parametersToTKFEC[0].name_="AOHBias"; parametersToTKFEC[0].value_=itoa(AOHBias);
     commandToAllTKFECCrates("SetAOHBiasEnMass", parametersToTKFEC);
+    //    std::cout << "YUTA : finish setting AOH Bias" << std::endl;
     
     //    std::cout << "[INFO] POH bias = " << AOHBias << std::endl;
     
@@ -108,7 +109,8 @@ bool PixelPOHBiasCalibration::execute() {
       Attribute_Vector parametersToTKFEC_Gain(1);
       parametersToTKFEC_Gain[0].name_="AOHGain"; parametersToTKFEC_Gain[0].value_=itoa(AOHGain);
       commandToAllTKFECCrates("SetAOHGainEnMass", parametersToTKFEC_Gain);
-      
+      //      std::cout << "YUTA : finish setting AOH Gain" << std::endl;
+
       //      std::cout << "[INFO] POH gain = " << AOHGain << std::endl;
       
       for ( std::set<PixelChannel>::const_iterator channelsToCalibrate_itr = channelsToCalibrate.begin(); channelsToCalibrate_itr != channelsToCalibrate.end(); channelsToCalibrate_itr++ ){
@@ -120,6 +122,9 @@ bool PixelPOHBiasCalibration::execute() {
 	const unsigned int channel = channelHdwAddress.fedchannel();
 
 	for (unsigned int i_event=0; i_event < nTriggersPerPOHBias; ++i_event){
+
+	  //	  std::cout << "[INFO] POH Bias = " << AOHBias << ", POH gain = " << AOHGain << ", nTrigger = " << i_event << std::endl;
+	  //	  std::cout << "YUTA : inside Loop : " << fednumber << " " << fedcrate << " " << channel << std::endl;
 
 	  sendTTCCalSync(); 
   
@@ -177,7 +182,7 @@ void PixelPOHBiasCalibration::endCalibration() {
   for(;module_itr!=modules.end();++module_itr){
     std::string modulePath=(*module_itr)->modulename();
     ofs << "TBM setting : pixel/tbm/" << modulePath << std::endl;
-    ofs << "TBM setting : pixel/dac/" << modulePath << std::endl;
+    ofs << "DAC setting : pixel/dac/" << modulePath << std::endl;
   }
 
 
@@ -382,6 +387,7 @@ void PixelPOHBiasCalibration::endCalibration() {
       for(std::map<int, std::map<int, TH1F* > >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
 
 	Int_t ch = it2->first;
+	if(idraw==9) idraw+=30; // to avoid transparent color
 
 	histos[fednumber][ch][2]->SetLineColor(idraw+1);
 	histos[fednumber][ch][2]->SetLineWidth(2);

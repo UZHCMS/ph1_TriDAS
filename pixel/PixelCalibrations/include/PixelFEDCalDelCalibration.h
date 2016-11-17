@@ -14,6 +14,7 @@
 #include "toolbox/exception/Handler.h"
 #include "toolbox/Event.h"
 #include "CalibFormats/SiPixelObjects/interface/PixelCalibConfiguration.h"
+#include "PixelUtilities/PixelRootUtilities/include/PixelElogMaker.h"
 #include "PixelCalibrations/include/PixelFEDCalibrationBase.h"
 #include "PixelCalibrations/include/PixelEfficiency2DWBCCalDel.h"
 #include "TFile.h"
@@ -33,6 +34,9 @@ class PixelFEDCalDelCalibration: public PixelFEDCalibrationBase {
   virtual void initializeFED();
 
  private:
+  bool writeElog;
+  TString outtext;
+  PixelElogMaker* elog;
 
   pos::PixelCalibConfiguration* tempCalibObject_;
   map <unsigned int, std::set<unsigned int> > fedsAndChannels_;
